@@ -1,0 +1,16 @@
+{
+  "name": "inma-entity-deletion-missing-source-types",
+  "description": "When deleting INMA entities (e.g., storefront entities), the deletion must cover all source types where the entity exists. In INMA, entities are stored across multiple sources including 'raw' (SourceRaw) and 'ops-override' (SourceOpsOverride). Per INMA runbooks, when performing entity cleanup or deletion, all applicable sources must be addressed. Deleting from only one source (e.g., SourceRaw) leaves stale entity data in the other source (e.g., SourceOpsOverride), which can cause inconsistent state and unexpected behavior.",
+  "syntactic_specification": [
+    "DeleteEntity.*modelpb\\.EntityID",
+    "\\.DeleteEntity\\(.*EntityID"
+  ],
+  "semantic_specification": [
+    "Identify calls to DeleteEntity that take a modelpb.EntityID (or similar entity ID struct) with a Source field. These are INMA entity deletion operations.",
+    "For each DeleteEntity call site, check whether the Source field is set to a single specific source (e.g., inmamodel.SourceRaw or inmamodel.SourceOpsOverride) rather than iterating over multiple sources.",
+    "Examine the surrounding function/method to determine if this is a standalone cleanup, migration, repair, or removal operation. Look for function names or comments containing words like 'delete', 'cleanup', 'remove', 'repair', 'migrate', 'enable' in the context of a CLI tool or standalone command.",
+    "If this is a cleanup/migration/removal operation and DeleteEntity is called with only ONE source type, check whether the function also deletes from the other required source types. In INMA, entities typically exist in both SourceRaw and SourceOpsOverride. Per INMA runbooks, both must be cleaned up.",
+    "NOT a bug if: (a) the function explicitly iterates over multiple sources (e.g., a slice of source types); (b) the deletion is intentionally targeting only one specific source as part of a source-specific operation (e.g., 'delete from raw only because ops-override was already handled'); (c) the function is in a test file; (d) the function is a low-level helper or gateway method that is always called by a higher-level function that handles all sources; (e) the function is a workflow activity (e.g., uses activity.GetLogger, cadence/temporal activity patterns, or is part of an orchestrated pipeline where individual steps intentionally operate on single sources); (f) the function is in a gateway/client wrapper package (e.g., pkg/gateway/) that provides a generic DeleteEntity interface to callers.",
+    "Report a bug if a standalone cleanup/migration/repair/CLI-tool function calls DeleteEntity with only a single source type and there is no evidence that other sources are handled elsewhere in the same operation flow. Include evidence of which source types are covered and which are missing."
+  ]
+}
