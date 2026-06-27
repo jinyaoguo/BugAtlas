@@ -8,7 +8,7 @@ real source via its Read / Grep tools.
 
 ## Method Overview
 
-![workflow](figs/workflow.pdf)
+![workflow](figs/workflow.png)
 
 
 ## Requirements
